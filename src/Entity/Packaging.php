@@ -11,6 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
  * Warehouse workers pack a set of products for a given order into one of these boxes.
  */
 #[ORM\Entity]
+#[ORM\Index(columns: ['width', 'height', 'length', 'max_weight'])]
 class Packaging
 {
 
@@ -19,7 +20,7 @@ class Packaging
     #[ORM\GeneratedValue]
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::FLOAT)]
+    #[ORM\Column(type: Types::FLOAT)] // TODO: proč floaty?
     private float $width;
 
     #[ORM\Column(type: Types::FLOAT)]
@@ -29,13 +30,23 @@ class Packaging
     private float $length;
 
     #[ORM\Column(type: Types::FLOAT)]
+    private float $volume;
+
+    #[ORM\Column(type: Types::FLOAT)]
     private float $maxWeight;
 
     public function __construct(float $width, float $height, float $length, float $maxWeight)
     {
-        $this->width = $width;
-        $this->height = $height;
-        $this->length = $length;
+        if ($width <= 0 || $height <= 0 || $length <= 0 || $maxWeight <= 0) {
+            throw new \InvalidArgumentException();
+        }
+
+        $arrayToSort = [$width, $height, $length];
+        \sort($arrayToSort);
+
+        [$this->width, $this->height, $this->length] = $arrayToSort; // TODO: duplicated logic from App\Service\Dto\InputBox
+
+        $this->volume = $width * $height * $length;
         $this->maxWeight = $maxWeight;
     }
 
